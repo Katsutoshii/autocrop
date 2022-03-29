@@ -1,1 +1,64 @@
-# autocrop
+# Autocrop
+
+This Python script consumes a list of input directories of PNG files and crops them.
+The user must specify a pivot for each group of directories. This pivot location is guaranteed to be
+Preserved during the crop. For example, `(0.5, 0.5)` ensures that the pivot is centered on the image.
+Use config.py to edit the input config.
+
+Email: joshikatsu@gmail.com
+
+## Instructions
+
+Run `pip install -r requirements.txt` to install the dependencies.
+We assume Python version > `3.x`.
+
+Then you should be able to edit `config.py` to describe your directories and pivots.
+When the config is ready, run `python main.py`.
+
+Note that the config entries are meant to be relative to the current working directory.
+The directory structure is preserved in the output.
+
+## Algorithm
+
+We simply loop over all directories and keep track of minimum and maximum points for the bounding box.
+The main complexity of this script comes from ensuring that the cropped image still has the same relative pivot as the original.
+
+Consider an image of size $(0, 0), (\text{Width}, \text{Height})$.
+Our algorithm produces a new bounding box $B = (\text{min}_x, \text{min}_y), (\text{max}_x, \text{max}_y)$.
+We must adjust $B$ such that the relative position of the pivot $(P_x, P_y)$ is preserved, where $P_x, P_y \in (0.0, 1.0)$.
+
+One way to describe this constraint is to say that on each axis, the lower bound must change proportionally to the upper bound. The ratio of this proprotion is determined by the corresponding component of the pivot.
+
+If we define the change to our upper and lower bounds on the $x$ axis as:
+
+$\Delta \text{min}_x = \text{min}_x - 0$
+
+$\Delta \text{max}_x = \text{Width} - \text{max}_x$
+
+To retain the same pivot point when cropping, we must make sure that the following ratio holds:
+
+$$\frac{\Delta \text{min}_x}{\Delta \text{max}_x} = \frac{P_x}{(1 - P_x)}$$
+
+For simplicity, let
+$Pr_x = \frac{P_x}{(1 - P_x)}$ be the pivot ratio for the $x$-axis.
+
+If we need to reduce the minimum to maintain the ratio ($\frac{\Delta \text{min}_x}{\Delta \text{max}_x} \gt Pr_x$), we subtract an offset term to $\text{min}_x$:
+
+$$\frac{\Delta \text{min}_x - \text{Offset}_x}{\Delta \text{max}_x} = Pr_x$$
+
+$$\Delta \text{min}_x - \text{Offset}_x = Pr_x \times \Delta \text{max}_x$$
+
+$$\text{Offset}_x = \Delta \text{min}_x - Pr_x \times \Delta \text{max}_x$$
+
+If we need to increase the maximum to maintain the ratio ($\frac{\Delta \text{min}_x}{\Delta \text{max}_x} \lt Pr_x$), we add an offset to $\text{max}_x$:
+
+$$\frac{\Delta \text{min}_x}{\Delta \text{max}_x - \text{Offset}_x} = Pr_x$$
+
+$$\Delta \text{min}_x = Pr_x \times (\Delta \text{max}_x - \text{Offset}_x)$$
+
+$$\frac{\Delta \text{min}_x}{Pr_x} = \Delta \text{max}_x - \text{Offset}_x$$
+
+$$\text{Offset}_x  = \Delta \text{max}_x - \frac{\Delta \text{min}_x}{Pr_x}$$
+
+
+Same deal for the $y$ axis.
