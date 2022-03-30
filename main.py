@@ -16,12 +16,15 @@ from pathlib import Path
 from PIL import Image  # type: ignore
 import config
 import sys
+from copy import copy
 
 
 X: int = 0
 Y: int = 1
 
-Vec2 = Tuple[int, int]
+Int2 = Tuple[int, int]
+Int4 = Tuple[int, int, int, int]
+Float2 = Tuple[float, float]
 
 
 def round_down(v: int, n: int) -> int:
@@ -45,13 +48,18 @@ class BoundingBox:
     max_x: int
     max_y: int
 
-    def grow_to_fit_image(self, image: Image):
-        """Grow the bounding box to fit all populated pixels in this image."""
+    @staticmethod
+    def from_image(image: Image):
+        """Constructs a bounding box from an image."""
         min_x, min_y, max_x, max_y = image.getbbox()
-        self.min_x = min(min_x, self.min_x)
-        self.min_y = min(min_y, self.min_y)
-        self.max_x = max(max_x, self.max_x)
-        self.max_y = max(max_y, self.max_y)
+        return BoundingBox(min_x, min_y, max_x, max_y)
+
+    def grow_to_fit(self, other: "BoundingBox"):
+        """Grow this bounding box to fit another."""
+        self.min_x = min(other.min_x, self.min_x)
+        self.min_y = min(other.min_y, self.min_y)
+        self.max_x = max(other.max_x, self.max_x)
+        self.max_y = max(other.max_y, self.max_y)
 
     def round_bounds(self, n: int):
         """Rounds bounds the nearest nth pixel"""
@@ -68,88 +76,118 @@ class BoundingBox:
         return image.crop((self.min_x, self.min_y, self.max_x, self.max_y))
 
 
-def getbbox(input_path: Path, pivot: Vec2) -> Optional[BoundingBox]:
-    """Get the bounding box that covers all images in a directory and overwrites with a cropped version."""
-    bb: Optional[BoundingBox] = None
+def get_bboxes(input_path: Path) -> List[BoundingBox]:
+    """Loads image bounding boxes from the directory."""
+    bbs: List[BoundingBox] = []
+
     for infile in glob.glob(f"{input_path}/**/*.png", recursive=True):
-        print("  Processing", infile)
         with Image.open(infile) as image:
-            # For first image, initialize the bounds.
-            if bb is None:
-                pivot_px: Vec2 = (
-                    int(image.width * pivot[X]), int(image.height * pivot[Y]))
-                bb = BoundingBox(
-                    pivot_px[X], pivot_px[Y], pivot_px[X], pivot_px[Y])
+            bbs.append(BoundingBox.from_image(image))
 
-            bb.grow_to_fit_image(image)
-            print("    Bounding box:", bb)
+    return bbs
 
-    if bb is None:
-        print(f"    {input_path} had no .png files.", file=sys.stderr)
-        return
 
-    # Adjust to respect the pivot.
-    # We need to guarantee that the bounds have shrunk proportionately to the pivot aspect ratio.
+def draw_square(image: Image, center: Int2, radius: int, color: Int4 = (255, 64, 64, 255)):
+    """Draw a square at the given point. Used for debugging."""
+    for i in range(radius * 2):
+        for j in range(radius * 2):
+            image.putpixel(
+                (center[X] + i - radius, center[Y] + j - radius), color)
+
+
+def get_total_bbox(bbs: List[BoundingBox]) -> Optional[BoundingBox]:
+    """Get the bounding box that covers all images in a directory and overwrites with a cropped version."""
+    total_bb: Optional[BoundingBox] = None
+    for bb in bbs:
+        if total_bb is None:
+            total_bb = copy(bb)
+        else:
+            total_bb.grow_to_fit(bb)
+        print("    Bounding box:", bb)
+
+    total_bb.round_bounds(4)
+    return total_bb
+
+
+def get_adjusted_bbox(bb: BoundingBox, total_bb: BoundingBox, pivot: Float2) -> BoundingBox:
+    """Given a bounding box `bb` that is contained within `total_bb`,
+    Return `bb` shrunk as much as possible while keeping `pivot` at the same relative location.
+    """
+    adjusted_bb: BoundingBox = copy(bb)
+
     print("  Adjusting Pivot...")
     if pivot[X] < 1.0:
         pivot_ratio_x: float = pivot[X] / (1 - pivot[X])
-        d_min_x: int = bb.min_x
-        d_max_x: int = image.width - bb.max_x
-        print("    pivot_ratio_x =", pivot_ratio_x)
-        print("    d_min_x =", d_min_x)
-        print("    d_max_x =", d_max_x)
+        d_min_x: int = bb.min_x - total_bb.min_x
+        d_max_x: int = total_bb.max_x - bb.max_x
 
         # If the min shrunk too much relative to the max
         if (d_min_x / d_max_x) > pivot_ratio_x:
             offset_x = int(d_min_x - d_max_x * pivot_ratio_x)
-            bb.min_x -= offset_x
+            adjusted_bb.min_x -= offset_x
         else:
             offset_x = int(d_max_x - d_min_x / pivot_ratio_x)
-            bb.max_x += offset_x
+            adjusted_bb.max_x += offset_x
 
     if pivot[Y] < 1.0:
         pivot_ratio_y: float = pivot[Y] / (1 - pivot[Y])
-        d_min_y: int = bb.min_y
-        d_max_y: int = image.height - bb.max_y
-        print("    pivot_ratio_y =", pivot_ratio_y)
-        print("    d_min_y =", d_min_y)
-        print("    d_max_y =", d_max_y)
+        d_min_y: int = bb.min_y - total_bb.min_y
+        d_max_y: int = total_bb.max_y - bb.max_y
 
         # If the min shrunk too much relative to the max
         if (d_min_y / d_max_y) > pivot_ratio_y:
             offset_y = int(d_min_y - d_max_y * pivot_ratio_y)
-            bb.min_y -= offset_y
+            adjusted_bb.min_y -= offset_y
         else:
             offset_y = int(d_max_y - d_min_y / pivot_ratio_y)
-            bb.max_y += offset_y
+            adjusted_bb.max_y += offset_y
 
-    bb.round_bounds(4)
-    return bb
+    adjusted_bb.round_bounds(4)
+    return adjusted_bb
 
 
-def crop_images(input_path: Path, pivot: Vec2, output_path: Path, root_path: Path):
+def crop_images(input_path: Path, pivot: Float2, output_path: Path, root_path: Path):
     """Crop images in this path and save the output to output_path"""
-    bb: Optional[BoundingBox] = getbbox(input_path, pivot)
 
-    for infile in glob.glob(f"{input_path}/**/*.png", recursive=True):
+    bbs: List[BoundingBox] = get_bboxes(input_path)
+    if len(bbs) == 0:
+        print(f"    {input_path} had no .png files.", file=sys.stderr)
+        return
+
+    total_bb: Optional[BoundingBox] = get_total_bbox(bbs)
+
+    for i, infile in enumerate(glob.glob(f"{input_path}/**/*.png", recursive=True)):
         with Image.open(infile) as image:
-            cropped_image: Image = bb.crop(image)
-            output_file: Path = output_path / Path(infile).relative_to(root_path)
+            # Access cached bounding box for better perf.
+            bb: BoundingBox = bbs[i]
+            adjusted_bb: BoundingBox = get_adjusted_bbox(bb, total_bb, pivot)
+            cropped_image: Image = adjusted_bb.crop(image)
+
+            if config.debug:
+                pivot_x = int(cropped_image.width *
+                              pivot[X]) - 2
+                pivot_y = int(cropped_image.height * pivot[Y]) - 2
+                draw_square(cropped_image, (pivot_x, pivot_y), radius=4)
+
+            output_file: Path = output_path / \
+                Path(infile).relative_to(root_path)
             output_file.parent.mkdir(parents=True, exist_ok=True)
 
             print("  Writing to", output_file)
             cropped_image.save(output_file)
 
 
-def main(root_dir: str, output_dir: str, inputs: List[Tuple[Vec2, List[str]]]):
+def main(root_dir: str, output_dir: str, inputs: List[Tuple[Float2, List[str]]]):
     root_path: Path = Path(root_dir)
-    output_path: Path = root_path / output_dir
+    output_path: Path = Path(output_dir)
     for pivot, paths in inputs:
         for input_dir in paths:
             input_path: Path = root_path / input_dir
-            print("Processing images in ", input_path, "with pivot", pivot)
+            print("Processing images in", input_path, "with pivot", pivot)
             crop_images(input_path, pivot, output_path, root_path)
 
 
 if __name__ == "__main__":
     main(config.root_dir, config.output_dir, config.inputs)
+    # with Image.open("testdata/Motion/A/Walk/Walk2a.png") as image:
+    #     print(image.width, image.height)
