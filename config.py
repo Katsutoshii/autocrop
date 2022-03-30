@@ -10,7 +10,7 @@ root_dir: str = "testdata"
 
 # Each config entry is of the form: (Pivot, Directories)
 inputs: List[Tuple[Tuple[int, int], List[str]]] = [
-    ((0.25, 0.5), ["Motion"]),
+    ((0.5, 1), ["Motion"]),
 ]
 
 # If true, plot the pivot point on the image.

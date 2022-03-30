@@ -91,8 +91,10 @@ def draw_square(image: Image, center: Int2, radius: int, color: Int4 = (255, 64,
     """Draw a square at the given point. Used for debugging."""
     for i in range(radius * 2):
         for j in range(radius * 2):
-            image.putpixel(
-                (center[X] + i - radius, center[Y] + j - radius), color)
+            x: int = center[X] + i - radius
+            y: int = center[Y] + j - radius
+            if x >= 0 and x < image.width and y >= 0 and y < image.height:
+                image.putpixel((x, y), color)
 
 
 def get_total_bbox(bbs: List[BoundingBox]) -> Optional[BoundingBox]:
