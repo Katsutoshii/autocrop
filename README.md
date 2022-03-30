@@ -10,7 +10,7 @@ Email: joshikatsu@gmail.com
 ## Instructions
 
 Run `pip install -r requirements.txt` to install the dependencies.
-We assume Python version > `3.x`.
+We assume Python version > `3.7.x`.
 
 Then you should be able to edit `config.py` to describe your directories and pivots.
 When the config is ready, run `python main.py`.
