@@ -15,8 +15,12 @@ We assume Python version > `3.7.x`.
 Then you should be able to edit `config.py` to describe your directories and pivots.
 When the config is ready, run `python main.py`.
 
-Note that the config entries are meant to be relative to the current working directory.
+## Usage
+The config entries are meant to be relative to the current working directory.
 The directory structure is preserved in the output.
+
+Pivot x y is [0, 1], with [0, 0] at the top left.
+![](https://docs.unity3d.com/StaticFiles/ScriptRefImages/RectXMinYMin.svg)
 
 ## Algorithm
 
