@@ -136,9 +136,9 @@ def get_adjusted_bbox(bb: BoundingBox, total_bb: BoundingBox, pivot: Float2) -> 
         pivot_ratio_x: float = pivot[X] / (1 - pivot[X])
         d_min_x: int = bb.min_x - total_bb.min_x
         d_max_x: int = total_bb.max_x - bb.max_x
-
+        
         # If the min shrunk too much relative to the max
-        if (d_min_x / d_max_x) > pivot_ratio_x:
+        if d_max_x == 0 or (d_min_x / d_max_x) > pivot_ratio_x:
             offset_x = int(d_min_x - d_max_x * pivot_ratio_x)
             adjusted_bb.min_x -= offset_x
         else:
@@ -151,7 +151,7 @@ def get_adjusted_bbox(bb: BoundingBox, total_bb: BoundingBox, pivot: Float2) -> 
         d_max_y: int = total_bb.max_y - bb.max_y
 
         # If the min shrunk too much relative to the max
-        if (d_min_y / d_max_y) > pivot_ratio_y:
+        if d_max_y == 0 or (d_min_y / d_max_y) > pivot_ratio_y:
             offset_y = int(d_min_y - d_max_y * pivot_ratio_y)
             adjusted_bb.min_y -= offset_y
         else:
