@@ -28,17 +28,17 @@ Pivot x y is [0, 1], with [0, 0] at the top left.
 We simply loop over all directories and keep track of minimum and maximum points for the bounding box.
 The main complexity of this script comes from ensuring that the cropped image still has the same relative pivot as the original.
 
-Consider an image of size $(0, 0), (\text{Width}, \text{Height})$.
-Our algorithm produces a new bounding box $B = (\text{min}_x, \text{min}_y), (\text{max}_x, \text{max}_y)$.
+Consider an animation where all images can be encompassed by a bounding box $B = (\text{min}_x, \text{min}_y), (\text{max}_x, \text{max}_y)$.
+Our algorithm produces a new bounding box $B' = (\text{min}_x', \text{min}_y'), (\text{max}_x', \text{max}_y')$.
 We must adjust $B$ such that the relative position of the pivot $(P_x, P_y)$ is preserved, where $P_x, P_y \in (0.0, 1.0)$.
 
 One way to describe this constraint is to say that on each axis, the lower bound must change proportionally to the upper bound. The ratio of this proprotion is determined by the corresponding component of the pivot.
 
 If we define the change to our upper and lower bounds on the $x$ axis as:
 
-$\Delta \text{min}_x = \text{min}_x - 0$
+$\Delta \text{min}_x = \text{min}_x - \text{min}_x'$
 
-$\Delta \text{max}_x = \text{Width} - \text{max}_x$
+$\Delta \text{max}_x = \text{max}_x' - \text{max}_x$
 
 To retain the same pivot point when cropping, we must make sure that the following ratio holds:
 
