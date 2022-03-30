@@ -20,6 +20,7 @@ The config entries are meant to be relative to the current working directory.
 The directory structure is preserved in the output.
 
 Pivot x y is [0, 1], with [0, 0] at the top left.
+
 ![](https://docs.unity3d.com/StaticFiles/ScriptRefImages/RectXMinYMin.svg)
 
 ## Algorithm
