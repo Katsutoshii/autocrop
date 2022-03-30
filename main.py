@@ -68,10 +68,10 @@ class BoundingBox:
         return image.crop((self.min_x, self.min_y, self.max_x, self.max_y))
 
 
-def getbbox(input_dir: str, pivot: Vec2) -> Optional[BoundingBox]:
+def getbbox(input_path: Path, pivot: Vec2) -> Optional[BoundingBox]:
     """Get the bounding box that covers all images in a directory and overwrites with a cropped version."""
     bb: Optional[BoundingBox] = None
-    for infile in glob.glob(f"{input_dir}/**/*.png", recursive=True):
+    for infile in glob.glob(f"{input_path}/**/*.png", recursive=True):
         print("  Processing", infile)
         with Image.open(infile) as image:
             # For first image, initialize the bounds.
@@ -85,7 +85,7 @@ def getbbox(input_dir: str, pivot: Vec2) -> Optional[BoundingBox]:
             print("    Bounding box:", bb)
 
     if bb is None:
-        print(f"    {input_dir} had no .png files.", file=sys.stderr)
+        print(f"    {input_path} had no .png files.", file=sys.stderr)
         return
 
     # Adjust to respect the pivot.
@@ -127,27 +127,29 @@ def getbbox(input_dir: str, pivot: Vec2) -> Optional[BoundingBox]:
     return bb
 
 
-def crop_images(input_dir: str, pivot: Vec2, output_dir: str):
+def crop_images(input_path: Path, pivot: Vec2, output_path: Path, root_path: Path):
     """Crop images in this path and save the output to output_path"""
-    bb: Optional[BoundingBox] = getbbox(input_dir, pivot)
+    bb: Optional[BoundingBox] = getbbox(input_path, pivot)
 
-    for infile in glob.glob(f"{input_dir}/**/*.png", recursive=True):
+    for infile in glob.glob(f"{input_path}/**/*.png", recursive=True):
         with Image.open(infile) as image:
             cropped_image: Image = bb.crop(image)
-            output_path: Path = Path(output_dir)
-            output_file = output_path / infile
+            output_file: Path = output_path / Path(infile).relative_to(root_path)
             output_file.parent.mkdir(parents=True, exist_ok=True)
 
             print("  Writing to", output_file)
             cropped_image.save(output_file)
 
 
-def main(output_dir: str, inputs: List[Tuple[Vec2, List[str]]]):
+def main(root_dir: str, output_dir: str, inputs: List[Tuple[Vec2, List[str]]]):
+    root_path: Path = Path(root_dir)
+    output_path: Path = root_path / output_dir
     for pivot, paths in inputs:
-        for path in paths:
-            print("Processing images in ", path, "with pivot", pivot)
-            crop_images(path, pivot, output_dir)
+        for input_dir in paths:
+            input_path: Path = root_path / input_dir
+            print("Processing images in ", input_path, "with pivot", pivot)
+            crop_images(input_path, pivot, output_path, root_path)
 
 
 if __name__ == "__main__":
-    main(config.output_dir, config.inputs)
+    main(config.root_dir, config.output_dir, config.inputs)
