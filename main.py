@@ -132,7 +132,11 @@ def get_adjusted_bbox(bb: BoundingBox, total_bb: BoundingBox, pivot: Float2) -> 
     adjusted_bb: BoundingBox = copy(bb)
 
     print("  Adjusting Pivot...")
-    if pivot[X] > 0 and pivot[X] < 1.0:
+    if pivot[X] == 0.0:
+        adjusted_bb.min_x = total_bb.min_x
+    elif pivot[X] == 1.0:
+        adjusted_bb.max_x = total_bb.max_x
+    else:
         pivot_ratio_x: float = pivot[X] / (1 - pivot[X])
         d_min_x: int = bb.min_x - total_bb.min_x
         d_max_x: int = total_bb.max_x - bb.max_x
@@ -145,7 +149,11 @@ def get_adjusted_bbox(bb: BoundingBox, total_bb: BoundingBox, pivot: Float2) -> 
             offset_x = int(d_max_x - d_min_x / pivot_ratio_x)
             adjusted_bb.max_x += offset_x
 
-    if pivot[Y] > 0 and pivot[Y] < 1.0:
+    if pivot[Y] == 0.0:
+        adjusted_bb.min_y = total_bb.min_y
+    elif pivot[Y] == 1.0:
+        adjusted_bb.max_y = total_bb.max_y
+    else:
         pivot_ratio_y: float = pivot[Y] / (1 - pivot[Y])
         d_min_y: int = bb.min_y - total_bb.min_y
         d_max_y: int = total_bb.max_y - bb.max_y
