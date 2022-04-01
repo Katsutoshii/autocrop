@@ -135,7 +135,7 @@ def get_adjusted_bbox(bb: BoundingBox, total_bb: BoundingBox, pivot: Float2) -> 
     """
     adjusted_bb: BoundingBox = copy(bb)
 
-    print("  Adjusting Pivot...")
+    print(f"  Adjusting Pivot with {adjusted_bb}...")
     if pivot[X] == 0.0:
         adjusted_bb.min_x = total_bb.min_x
     elif pivot[X] == 1.0:
@@ -190,10 +190,7 @@ def crop_images(root_path: Path, input_dirs: List[str], pivot: Float2, output_pa
         input_path: Path = root_path / input_dir
         for i, infile in enumerate(glob.glob(f"{input_path}/**/*.png", recursive=True)):
             with Image.open(infile) as image:
-                # Access cached bounding box for better perf.
-                bb: Optional[BoundingBox] = bbs[i]
-                if bb is None:
-                    continue
+                bb = BoundingBox.from_image(image)
 
                 adjusted_bb: BoundingBox = get_adjusted_bbox(
                     bb, total_bb, pivot)
