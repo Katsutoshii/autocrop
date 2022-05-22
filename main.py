@@ -120,10 +120,11 @@ def get_total_bbox(bbs: List[Optional[BoundingBox]]) -> Optional[BoundingBox]:
     """Get the bounding box that covers all images in a directory and overwrites with a cropped version."""
     total_bb: Optional[BoundingBox] = None
     for bb in bbs:
-        if total_bb is None:
-            total_bb = copy(bb)
-        else:
-            total_bb.grow_to_fit(bb)
+        if bb is not None:
+            if total_bb is None:
+                total_bb = copy(bb)
+            else:
+                total_bb.grow_to_fit(bb)
 
     total_bb.round_bounds(4)
     return total_bb
@@ -191,6 +192,9 @@ def crop_images(root_path: Path, input_dirs: List[str], pivot: Float2, output_pa
         for i, infile in enumerate(glob.glob(f"{input_path}/**/*.png", recursive=True)):
             with Image.open(infile) as image:
                 bb = BoundingBox.from_image(image)
+
+                if bb is None:
+                    continue
 
                 adjusted_bb: BoundingBox = get_adjusted_bbox(
                     bb, total_bb, pivot)
