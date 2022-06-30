@@ -7,13 +7,13 @@ Use config.py to edit the input config.
 
 Email: joshikatsu@gmail.com
 """
-
 from typing import Optional, Tuple, List
 import glob
 from dataclasses import dataclass
 import math
 from pathlib import Path
-from PIL import Image  # type: ignore
+from PIL import Image
+import numpy as np
 import config
 import sys
 from copy import copy
@@ -61,8 +61,19 @@ class BoundingBox:
     max_y: int
 
     @staticmethod
-    def from_image(image: Image) -> Optional["BoundingBox"]:
+    def from_image(image: Image, invert: bool = False) -> Optional["BoundingBox"]:
         """Constructs a bounding box from an image."""
+        # `getbbox` only trims the black border. Thus we must
+        # first replace white border before computing the
+        # bounding box.
+        data = np.array(image)
+        red, green, blue, alpha = data.T
+        white_areas = (red == 255) & (blue == 255) & (
+            green == 255) & (alpha == 0)
+        # replace (255,255,255,0) with (0,0,0,0)
+        data[..., :-1][white_areas.T] = (0, 0, 0)
+        image = Image.fromarray(data)
+
         img_result = image.getbbox()
         if img_result is None:
             print(BColors.WARNING +
@@ -198,6 +209,7 @@ def crop_images(root_path: Path, input_dirs: List[str], pivot: Float2, output_pa
 
                 adjusted_bb: BoundingBox = get_adjusted_bbox(
                     bb, total_bb, pivot)
+                print("  Adjusted bb to", adjusted_bb)
                 cropped_image: Image = adjusted_bb.crop(image)
 
                 if config.debug:
