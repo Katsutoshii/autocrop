@@ -40,7 +40,7 @@ inputs: List[Tuple[Pivot, DirectoryGroups]] = [
         # ["Flashback 2 MeetCute/B2"],
         # ["Flashback 2 MeetCute/Eat Table"],
         # ["Flashback 2 MeetCute/Bg"],
-        # ["Photos App"],
+        # ["../Stills/Photos App"],
 
         # ["Good Epilogue/WFH/Desk"],
         # ["Good Epilogue/Therapy/AB"],
@@ -121,7 +121,7 @@ inputs: List[Tuple[Pivot, DirectoryGroups]] = [
 
         ["Scene 8 Reunite Happy/SadB"],
 
-        ["Photos/Good", "Photos/Leave", ],
+        ["../Stills/Photos/Good", "../Stills/Photos/Leave", ],
 
         ["Scene 2 Eating w Friends/Dish", ],
     ],),
