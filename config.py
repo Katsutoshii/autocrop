@@ -1,9 +1,8 @@
 """Configure autocrop tool.
 """
 from typing import List, Tuple
+from autocrop import Pivot, DirectoryGroups
 
-DirectoryGroups = List[List[str]]
-Pivot = Tuple[float, float]
 
 # Relative or absolute path to output cropped images.
 output_dir: str = "output"
