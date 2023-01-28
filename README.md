@@ -55,7 +55,7 @@ $$\Delta \text{min}_x - \text{Offset}_x = Pr_x \times \Delta \text{max}_x$$
 
 $$\text{Offset}_x = \Delta \text{min}_x - Pr_x \times \Delta \text{max}_x$$
 
-If we need to increase the maximum to maintain the ratio ( $\frac{\Delta \text{min}_x}{\Delta \text{max}_x} \lt Pr_x$ ), we add an offset to $\text{max}_x$:
+If we need to increase the maximum to maintain the ratio $\frac{\Delta \text{min}_x}{\Delta \text{max}_x} \lt Pr_x$, we add an offset to $\text{max}_x$:
 
 $$\frac{\Delta \text{min}_x}{\Delta \text{max}_x - \text{Offset}_x} = Pr_x$$
 
